@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>生日快乐郑佳瑶</title>
+    <!-- 引入高级感字体：衬线体(标题/数字)与无衬线体(正文) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            /* Ins风 高级低饱和配色 */
+            --bg-base: #FAFAFA;       
+            --text-main: #4A4E69;     
+            --text-light: #9EA3B8;    
+            
+            --pastel-pink: #F2E3E5;   
+            --pastel-blue: #E2EAF4;   
+            --pastel-yellow:#FBF5E5;  
+            --accent-color: #8D99AE;  
+            
+            /* 极简毛玻璃 */
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.9);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', 'Noto Serif SC', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 高级柔光弥散渐变背景 */
+        .ambient-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1; overflow: hidden; pointer-events: none;
+            background: var(--bg-base);
+        }
+        .blob {
+            position: absolute; border-radius: 50%;
+            filter: blur(70px); opacity: 0.7;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+        .blob-1 { width: 400px; height: 400px; background: #EAD6DA; top: -10%; left: -10%; animation-delay: 0s; }
+        .blob-2 { width: 350px; height: 350px; background: #D6E4F0; bottom: -10%; right: -5%; animation-delay: -5s; }
+        .blob-3 { width: 300px; height: 300px; background: #FDF4D9; top: 40%; left: 60%; animation-delay: -10s; }
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(-30px, 50px) scale(1.1); }
+        }
+
+        /* 极简卡片 */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px;
+            margin: 20px auto;
+            width: 90%;
+            max-width: 460px;
+            box-shadow: 0 10px 40px rgba(74, 78, 105, 0.04);
+            transition: transform 0.3s ease;
+        }
+        
+        h2, h3 { font-family: 'Noto Serif SC', serif; font-weight: 600; color: var(--text-main); }
+        h3 { font-size: 1.1rem; margin-bottom: 15px; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
+
+        /* 头部 */
+        header { text-align: center; padding: 50px 20px 30px; }
+        .title-en { font-family: 'Inter', sans-serif; font-size: 0.8rem; letter-spacing: 3px; color: var(--accent-color); text-transform: uppercase; margin-bottom: 8px;}
+        h1 { font-family: 'Noto Serif SC', serif; font-size: 2rem; font-weight: 700; color: var(--text-main); margin-bottom: 12px; letter-spacing: 2px; }
+        .greeting-text { font-size: 0.95rem; color: var(--text-light); font-weight: 300; min-height: 24px; letter-spacing: 1px; }
+
+        /* 日历排版 */
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-family: 'Inter', sans-serif; }
+        .calendar-header button { background: none; border: none; color: var(--accent-color); font-size: 1.2rem; cursor: pointer; padding: 5px; transition: 0.2s; }
+        .calendar-header span { font-weight: 500; font-size: 1rem; letter-spacing: 1px; }
+        .weekdays, .days { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 8px; }
+        .weekdays div { color: var(--text-light); font-size: 0.75rem; padding-bottom: 10px; text-transform: uppercase; font-weight: 500;}
+        .day { padding: 8px 0; border-radius: 50%; cursor: pointer; position: relative; font-size: 0.9rem; font-weight: 400; transition: all 0.3s; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; }
+        .day.has-record::after { content: ''; position: absolute; bottom: 2px; width: 4px; height: 4px; background-color: #DDA7A5; border-radius: 50%; }
+        .day:hover { background: var(--pastel-blue); }
+        .day:active, .day.selected { background: var(--text-main); color: #fff; }
+
+        /* 分割线 */
+        .divider { height: 1px; background: rgba(74, 78, 105, 0.08); margin: 24px 0; border: none; }
+
+        /* 杂志风日期展示组件 */
+        .date-showcase { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; color: var(--text-main); }
+        .date-showcase .day-num { font-family: 'Noto Serif SC', serif; font-size: 2.8rem; font-weight: 700; line-height: 0.9; }
+        .date-showcase .month-year { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; display: flex; flex-direction: column; }
+        .date-showcase .month-year span:first-child { font-weight: 500; color: var(--text-main); }
+
+        /* 记录区 */
+        .input-area { display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; }
+        textarea { width: 100%; height: 80px; border-radius: 12px; border: 1px solid rgba(74, 78, 105, 0.1); background: rgba(255,255,255,0.8); color: var(--text-main); padding: 15px; font-family: 'Inter', sans-serif; font-size: 0.9rem; resize: none; outline: none; transition: border 0.3s; line-height: 1.5; }
+        textarea:focus { border-color: var(--accent-color); }
+        
+        .btn { background: var(--text-main); color: white; font-weight: 400; font-size: 0.9rem; border: none; padding: 12px; border-radius: 30px; cursor: pointer; transition: 0.3s; min-height: 44px; letter-spacing: 1px; font-family: 'Inter', sans-serif;}
+        .btn:active { transform: scale(0.97); opacity: 0.9; }
+        .btn-outline { background: transparent; border: 1px solid var(--text-light); color: var(--text-main); }
+        
+        .record-list { display: flex; flex-direction: column; gap: 16px; max-height: 300px; overflow-y: auto; padding-right: 5px; margin-top: 15px;}
+        .record-item { padding-bottom: 16px; border-bottom: 1px dashed rgba(74, 78, 105, 0.1); display: flex; flex-direction: column; gap: 8px;}
+        .record-header { display: flex; justify-content: space-between; align-items: center; }
+        .record-date { font-size: 0.7rem; color: var(--text-light); letter-spacing: 0.5px; text-transform: uppercase;}
+        .record-content { font-size: 0.9rem; line-height: 1.6; color: var(--text-main); font-weight: 300; white-space: pre-wrap; word-break: break-all;}
+        .delete-btn { background: none; color: #DDA7A5; border: none; cursor: pointer; font-size: 0.75rem; }
+
+        /* 游戏区 */
+        #gameCanvas { width: 100%; height: 220px; background: rgba(255,255,255,0.5); border-radius: 16px; touch-action: none; display: none; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.8); }
+        .game-status { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.85rem; font-weight: 500; letter-spacing: 1px; color: var(--accent-color);}
+
+        /* 冥想区 */
+        .meditation-container { display: flex; flex-direction: column; align-items: center; padding: 30px 0 10px; }
+        .breathe-circle { width: 120px; height: 120px; border-radius: 50%; background: var(--pastel-blue); box-shadow: 0 0 30px rgba(226, 234, 244, 0.8); display: flex; justify-content: center; align-items: center; transition: all 1s ease-in-out; transform: scale(1); margin-bottom: 40px; }
+        .breathe-text { font-size: 0.9rem; font-weight: 400; color: var(--text-main); letter-spacing: 2px; font-family: 'Inter', sans-serif;}
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(74, 78, 105, 0.2); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- 背景 -->
+    <div class="ambient-bg">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- 头部 -->
+    <header>
+        <div class="title-en">Happy Birthday</div>
+        <h1>郑 佳 瑶</h1>
+        <div class="greeting-text" id="greetingText">自由欢畅，不敛锋芒。</div>
+    </header>
+
+    <!-- 日历与记录 -->
+    <div class="glass-card">
+        <h3><span>Journal</span> <span style="font-size: 0.8rem; color: var(--text-light); font-weight: normal;">记录此刻</span></h3>
+        
+        <div class="calendar-header">
+            <button onclick="changeMonth(-1)">&#8249;</button>
+            <span id="currentMonthStr">2026.03</span>
+            <button onclick="changeMonth(1)">&#8250;</button>
+        </div>
+        <div class="weekdays">
+            <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div class="days" id="calendarDays"></div>
+
+        <hr class="divider">
+
+        <!-- 杂志风大日期展示区 -->
+        <div class="date-showcase">
+            <div class="day-num" id="showcaseDay">25</div>
+            <div class="month-year">
+                <span id="showcaseMonth">MARCH</span>
+                <span id="showcaseYear">2026</span>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <textarea id="recordInput" placeholder="写下属于今天的思绪..."></textarea>
+            <button class="btn" onclick="saveRecord()">发 布 (Publish)</button>
+            <button class="btn btn-outline" onclick="renderRecords()">查看全部记录</button>
+        </div>
+
+        <div class="record-list" id="recordList">
+            <!-- JS渲染记录 -->
+        </div>
+    </div>
+
+    <!-- 游戏区 -->
+    <div class="glass-card">
+        <h3><span>Starlight</span> <span style="font-size: 0.8rem; color: var(--text-light); font-weight: normal;">收集星光</span></h3>
+        <p style="font-size: 0.8rem; margin-bottom: 20px; color: var(--text-light); line-height: 1.5; font-weight: 300;">滑动底部承接掉落的星光<br>这个小游戏只有30秒哦</p>
+        
+        <div class="game-status" id="gameStatus" style="display: none;">
+            <span id="gameScore">星光: 0</span>
+            <span id="gameTime">剩余: 30s</span>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+        <button class="btn" style="width: 100%;" id="startGameBtn" onclick="startMiniGame()">开始放空</button>
+    </div>
+
+    <!-- 冥想区 -->
+    <div class="glass-card" style="margin-bottom: 50px;">
+        <h3><span>Breathe</span> <span style="font-size: 0.8rem; color: var(--text-light); font-weight: normal;">冥想呼吸</span></h3>
+        <p style="font-size: 0.8rem; text-align: center; color: var(--text-light); font-weight: 300;">跟随光影的缩放，深呼吸。</p>
+        
+        <div class="meditation-container">
+            <div class="breathe-circle" id="breatheCircle">
+                <span class="breathe-text" id="breatheText">Ready</span>
+            </div>
+            <button class="btn btn-outline" style="width: 140px;" onclick="toggleMeditation()" id="meditationBtn">开始 (Start)</button>
+        </div>
+    </div>
+
+    <script>
+        // ================= 1. 头部轮换 =================
+        const greetings =[
+            "时时有选择，路路有回转。",
+            "生日不是庆祝你出生，而是庆祝你存在。",
+            "希望你一切都好，希望所有俗套的祝福词都在你身上灵验。",
+            "健康，安宁，得到数不清的钱。"
+        ];
+        let greetIndex = 0;
+        setInterval(() => {
+            greetIndex = (greetIndex + 1) % greetings.length;
+            const el = document.getElementById('greetingText');
+            el.style.opacity = 0;
+            el.style.transition = "opacity 0.8s ease";
+            setTimeout(() => {
+                el.innerText = greetings[greetIndex];
+                el.style.opacity = 1;
+            }, 800);
+        }, 5000);
+
+        // ================= 2. 日历与记录逻辑 (修复版) =================
+        const monthNames =["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+        let currentDate = new Date();
+        // 初始化当前选中日期
+        let selectedDateObj = new Date(); 
+        let selectedDateString = formatDate(selectedDateObj); 
+        let records = JSON.parse(localStorage.getItem('birthdayRecords_JiaYao_INS')) ||[];
+
+        function formatDate(date) {
+            return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        // 更新杂志风日期显示组件
+        function updateDateShowcase(dateObj) {
+            document.getElementById('showcaseDay').innerText = String(dateObj.getDate()).padStart(2, '0');
+            document.getElementById('showcaseMonth').innerText = monthNames[dateObj.getMonth()];
+            document.getElementById('showcaseYear').innerText = dateObj.getFullYear();
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            document.getElementById('currentMonthStr').innerText = `${year}.${String(month + 1).padStart(2, '0')}`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const daysContainer = document.getElementById('calendarDays');
+            daysContainer.innerHTML = '';
+
+            for(let i=0; i<firstDay; i++) { daysContainer.innerHTML += `<div></div>`; }
+
+            for(let i=1; i<=daysInMonth; i++) {
+                const dateStr = `${year}.${String(month + 1).padStart(2, '0')}.${String(i).padStart(2, '0')}`;
+                const hasRecord = records.some(r => r.date === dateStr);
+                const isSelected = dateStr === selectedDateString;
+                
+                daysContainer.innerHTML += `
+                    <div class="day ${hasRecord ? 'has-record' : ''} ${isSelected ? 'selected' : ''}" 
+                         onclick="selectDate(${year}, ${month}, ${i})">${i}</div>
+                `;
+            }
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function selectDate(year, month, day) {
+            selectedDateObj = new Date(year, month, day);
+            selectedDateString = formatDate(selectedDateObj);
+            
+            // 刷新日历UI和顶部展示日期
+            updateDateShowcase(selectedDateObj);
+            renderCalendar();
+            renderRecords(selectedDateString);
+        }
+
+        // 保存记录逻辑（已修复）
+        function saveRecord() {
+            const input = document.getElementById('recordInput');
+            const text = input.value.trim();
+            if(!text) return;
+
+            const newRecord = {
+                id: Date.now(),
+                date: selectedDateString,
+                text: text,
+                time: new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'})
+            };
+            records.unshift(newRecord); 
+            localStorage.setItem('birthdayRecords_JiaYao_INS', JSON.stringify(records));
+            
+            input.value = '';
+            renderCalendar();
+            renderRecords(selectedDateString);
+            
+            // 极简低饱和撒花特效
+            confetti({ particleCount: 60, spread: 60, colors:['#F2E3E5', '#E2EAF4', '#FBF5E5', '#8D99AE'] });
+        }
+
+        function deleteRecord(id) {
+            if(confirm('Delete this entry? (删除这条记录吗？)')) {
+                records = records.filter(r => r.id !== id);
+                localStorage.setItem('birthdayRecords_JiaYao_INS', JSON.stringify(records));
+                renderCalendar();
+                renderRecords(selectedDateString);
+            }
+        }
+
+        function renderRecords(filterDate = null) {
+            const container = document.getElementById('recordList');
+            container.innerHTML = '';
+            const displayRecords = filterDate ? records.filter(r => r.date === filterDate) : records;
+
+            if(displayRecords.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-light); font-size:0.8rem; font-weight:300; padding: 20px;">No entries yet. (暂无记录)</p>`;
+                return;
+            }
+
+            displayRecords.forEach(r => {
+                container.innerHTML += `
+                    <div class="record-item">
+                        <div class="record-header">
+                            <span class="record-date">${r.date} &nbsp; ${r.time}</span>
+                            <button class="delete-btn" onclick="deleteRecord(${r.id})">Delete</button>
+                        </div>
+                        <div class="record-content">${r.text}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // 页面加载初始化
+        updateDateShowcase(selectedDateObj);
+        renderCalendar();
+        renderRecords(selectedDateString);
+
+
+        // ================= 3. 游戏：收集星光 (修复补全版) =================
+        const gameCanvas = document.getElementById('gameCanvas');
+        const ctx = gameCanvas.getContext('2d');
+        let gameTimer, reqId;
+        let score = 0, timeLeft = 30;
+        let isPlaying = false;
+        
+        let basket = { x: 150, y: 190, w: 60, h: 6 }; 
+        let fallingItems = [];
+        let floatTexts =[];
+        const itemColors =['#EAD6DA', '#D6E4F0', '#FDF4D9'];
+
+        function resizeGameCanvas() {
+            gameCanvas.width = gameCanvas.parentElement.clientWidth - 48; // 减去padding
+            basket.x = gameCanvas.width / 2 - basket.w / 2;
+        }
+
+        gameCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = gameCanvas.getBoundingClientRect();
+            basket.x = touch.clientX - rect.left - basket.w / 2;
+            if(basket.x < 0) basket.x = 0;
+            if(basket.x + basket.w > gameCanvas.width) basket.x = gameCanvas.width - basket.w;
+        }, {passive: false});
+
+        gameCanvas.addEventListener('mousemove', (e) => {
+            const rect = gameCanvas.getBoundingClientRect();
+            basket.x = e.clientX - rect.left - basket.w / 2;
+            if(basket.x < 0) basket.x = 0;
+            if(basket.x + basket.w > gameCanvas.width) basket.x = gameCanvas.width - basket.w;
+        });
+
+        function startMiniGame() {
+            if(isPlaying) return;
+            document.getElementById('startGameBtn').style.display = 'none';
+            document.getElementById('gameStatus').style.display = 'flex';
+            gameCanvas.style.display = 'block';
+            resizeGameCanvas();
+            
+            score = 0; timeLeft = 30; isPlaying = true;
+            fallingItems =[]; floatTexts =[];
+            document.getElementById('gameScore').innerText = `星光: ${score}`;
+            document.getElementById('gameTime').innerText = `剩余: ${timeLeft}s`;
+
+            gameLoop();
+            
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('gameTime').innerText = `剩余: ${timeLeft}s`;
+                if(timeLeft <= 0) endGame();
+            }, 1000);
+        }
+
+        function showFloatingText(x, y) { floatTexts.push({x, y, alpha: 1}); }
+
+        function gameLoop() {
+            if(!isPlaying) return;
+            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+            // 绘制承接盘
+            ctx.fillStyle = '#8D99AE';
+            ctx.beginPath();
+            ctx.roundRect(basket.x, basket.y, basket.w, basket.h, 4);
+            ctx.fill();
+
+            // 生成星光
+            if(Math.random() < 0.05) {
+                fallingItems.push({
+                    x: Math.random() * (gameCanvas.width - 10) + 5,
+                    y: 0, 
+                    size: 4 + Math.random() * 3, 
+                    speed: Math.random() * 1.5 + 1.5,
+                    color: itemColors[Math.floor(Math.random() * itemColors.length)]
+                });
+            }
+
+            for(let i=0; i<fallingItems.length; i++) {
+                let s = fallingItems[i];
+                s.y += s.speed;
+                
+                ctx.fillStyle = s.color;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
+                ctx.fill();
+
+                // 碰撞检测
+                if(s.y + s.size >= basket.y && s.y <= basket.y + basket.h && s.x >= basket.x - 10 && s.x <= basket.x + basket.w + 10) {
+                    score++;
+                    document.getElementById('gameScore').innerText = `星光: ${score}`;
+                    showFloatingText(s.x, basket.y - 15);
+                    fallingItems.splice(i, 1);
+                    i--;
+                } else if (s.y > gameCanvas.height) {
+                    fallingItems.splice(i, 1);
+                    i--;
+                }
+            }
+            
+            // +1 文字上浮
+            ctx.font = '300 12px Inter';
+            for(let i=0; i<floatTexts.length; i++) {
+                let ft = floatTexts[i];
+                ctx.fillStyle = `rgba(141, 153, 174, ${ft.alpha})`;
+                ctx.fillText("+1", ft.x - 6, ft.y);
+                ft.y -= 0.8; ft.alpha -= 0.03;
+                if(ft.alpha <= 0) { floatTexts.splice(i, 1); i--; }
+            }
+
+            reqId = requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(gameTimer);
+            cancelAnimationFrame(reqId);
+            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+            
+            ctx.fillStyle = '#4A4E69';
+            ctx.font = '600 18px Noto Serif SC';
+            ctx.textAlign = 'center';
+            ctx.fillText(`时间到 (Time's Up)`, gameCanvas.width/2, gameCanvas.height/2 - 10);
+            
+            ctx.font = '300 14px Inter';
+            ctx.fillStyle = '#8D99AE';
+            ctx.fillText(`共收集星光: ${score} 束`, gameCanvas.width/2, gameCanvas.height/2 + 20);
+            ctx.textAlign = 'left';
+
+            const btn = document.getElementById('startGameBtn');
+            btn.innerText = "再次放空 (Retry)";
+            btn.style.display = 'block';
+        }
+
+        // ================= 4. 治愈呼吸冥想 =================
+        let medState = 0;
+        const circle = document.getElementById('breatheCircle');
+        const text = document.getElementById('breatheText');
+        const medBtn = document.getElementById('meditationBtn');
+
+        function toggleMeditation() {
+            if(medState !== 0) {
+                stopMeditation();
+            } else {
+                medBtn.innerText = "停止 (Stop)";
+                medBtn.style.background = "var(--pastel-pink)"; 
+                medBtn.style.color = "var(--text-main)";
+                medBtn.style.border = "none";
+                runBreatheCycle(); 
+            }
+        }
+
+        function runBreatheCycle() {
+            if(medBtn.innerText === "开始 (Start)") return; 
+            
+            // 吸气 4s
+            medState = 1;
+            text.innerText = "Inhale...";
+            circle.style.transition = "transform 4s ease-in-out, background 4s";
+            circle.style.transform = "scale(1.6)";
+            circle.style.background = "#EAD6DA";
+
+            setTimeout(() => {
+                if(medState === 0) return;
+                // 屏息 4s
+                medState = 2;
+                text.innerText = "Hold...";
+                
+                setTimeout(() => {
+                    if(medState === 0) return;
+                    // 呼气 6s
+                    medState = 3;
+                    text.innerText = "Exhale...";
+                    circle.style.transition = "transform 6s ease-in-out, background 6s";
+                    circle.style.transform = "scale(1)";
+                    circle.style.background = "#D6E4F0";
+                    
+                    setTimeout(() => {
+                        if(medState === 0) return;
+                        runBreatheCycle(); 
+                    }, 6000);
+                }, 4000);
+            }, 4000);
+        }
+
+        function stopMeditation() {
+            medState = 0;
+            medBtn.innerText = "开始 (Start)";
+            medBtn.style.background = "transparent";
+            medBtn.style.border = "1px solid var(--text-light)"; 
+            text.innerText = "Ready";
+            circle.style.transition = "transform 1s ease-in-out, background 1s";
+            circle.style.transform = "scale(1)";
+            circle.style.background = "var(--pastel-blue)";
+        }
+    </script>
+</body>
+</html>
