@@ -180,18 +180,17 @@
         </div>
     </div>
 
-    <!-- 游戏区 -->
+  <!-- 4. 流星雨区 - 星空许愿 -->
     <div class="glass-card">
-        <h3><span>Starlight</span> <span style="font-size: 0.8rem; color: var(--text-light); font-weight: normal;">收集星光</span></h3>
-        <p style="font-size: 0.8rem; margin-bottom: 20px; color: var(--text-light); line-height: 1.5; font-weight: 300;">滑动底部承接掉落的星光<br>这个小游戏只有30秒哦</p>
+        <h3><span>Meteor Shower</span> <span style="font-size: 0.8rem; color: var(--text-light); font-weight: normal;">星空许愿</span></h3>
+        <p style="font-size: 0.8rem; margin-bottom: 20px; color: var(--text-light); line-height: 1.5; font-weight: 300;">点亮夜空，等一颗流星划过。<br>闭上眼睛，在心里默念一个愿望。</p>
         
-        <div class="game-status" id="gameStatus" style="display: none;">
-            <span id="gameScore">星光: 0</span>
-            <span id="gameTime">剩余: 30s</span>
+        <!-- 极简暗色夜空画板 -->
+        <div style="border-radius: 16px; overflow: hidden; margin-bottom: 15px; box-shadow: inset 0 4px 15px rgba(0,0,0,0.1);">
+            <canvas id="meteorCanvas" style="width: 100%; height: 200px; background: linear-gradient(to bottom, #1A1A24, #2B2D42); display: block;"></canvas>
         </div>
         
-        <canvas id="gameCanvas"></canvas>
-        <button class="btn" style="width: 100%;" id="startGameBtn" onclick="startMiniGame()">开始放空</button>
+        <button class="btn" style="width: 100%;" id="meteorBtn" onclick="triggerMeteorShower()">许 个 愿 (Make a Wish)</button>
     </div>
 
     <!-- 冥想区 -->
@@ -347,138 +346,151 @@
         renderRecords(selectedDateString);
 
 
-        // ================= 3. 游戏：收集星光 (修复补全版) =================
-        const gameCanvas = document.getElementById('gameCanvas');
-        const ctx = gameCanvas.getContext('2d');
-        let gameTimer, reqId;
-        let score = 0, timeLeft = 30;
-        let isPlaying = false;
-        
-        let basket = { x: 150, y: 190, w: 60, h: 6 }; 
-        let fallingItems = [];
-        let floatTexts =[];
-        const itemColors =['#EAD6DA', '#D6E4F0', '#FDF4D9'];
+       // ================= 3. 高级感：流星雨特效 =================
+        const canvas = document.getElementById('meteorCanvas');
+        const ctx = canvas.getContext('2d');
+        let meteors =[];
+        let backgroundStars =[];
+        let isShowerActive = false;
 
-        function resizeGameCanvas() {
-            gameCanvas.width = gameCanvas.parentElement.clientWidth - 48; // 减去padding
-            basket.x = gameCanvas.width / 2 - basket.w / 2;
-        }
-
-        gameCanvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = gameCanvas.getBoundingClientRect();
-            basket.x = touch.clientX - rect.left - basket.w / 2;
-            if(basket.x < 0) basket.x = 0;
-            if(basket.x + basket.w > gameCanvas.width) basket.x = gameCanvas.width - basket.w;
-        }, {passive: false});
-
-        gameCanvas.addEventListener('mousemove', (e) => {
-            const rect = gameCanvas.getBoundingClientRect();
-            basket.x = e.clientX - rect.left - basket.w / 2;
-            if(basket.x < 0) basket.x = 0;
-            if(basket.x + basket.w > gameCanvas.width) basket.x = gameCanvas.width - basket.w;
-        });
-
-        function startMiniGame() {
-            if(isPlaying) return;
-            document.getElementById('startGameBtn').style.display = 'none';
-            document.getElementById('gameStatus').style.display = 'flex';
-            gameCanvas.style.display = 'block';
-            resizeGameCanvas();
+        // 初始化画板与背景星空（适配手机高清屏幕防模糊）
+        function initMeteorCanvas() {
+            // 获取画板实际显示的尺寸
+            const rect = canvas.parentElement.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
             
-            score = 0; timeLeft = 30; isPlaying = true;
-            fallingItems =[]; floatTexts =[];
-            document.getElementById('gameScore').innerText = `星光: ${score}`;
-            document.getElementById('gameTime').innerText = `剩余: ${timeLeft}s`;
-
-            gameLoop();
+            // 放大内部画板分辨率以保证高清
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
             
-            gameTimer = setInterval(() => {
-                timeLeft--;
-                document.getElementById('gameTime').innerText = `剩余: ${timeLeft}s`;
-                if(timeLeft <= 0) endGame();
-            }, 1000);
-        }
+            // 固定CSS显示尺寸
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
 
-        function showFloatingText(x, y) { floatTexts.push({x, y, alpha: 1}); }
-
-        function gameLoop() {
-            if(!isPlaying) return;
-            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
-
-            // 绘制承接盘
-            ctx.fillStyle = '#8D99AE';
-            ctx.beginPath();
-            ctx.roundRect(basket.x, basket.y, basket.w, basket.h, 4);
-            ctx.fill();
-
-            // 生成星光
-            if(Math.random() < 0.05) {
-                fallingItems.push({
-                    x: Math.random() * (gameCanvas.width - 10) + 5,
-                    y: 0, 
-                    size: 4 + Math.random() * 3, 
-                    speed: Math.random() * 1.5 + 1.5,
-                    color: itemColors[Math.floor(Math.random() * itemColors.length)]
+            // 生成静态的闪烁星星
+            backgroundStars =[];
+            for (let i = 0; i < 60; i++) {
+                backgroundStars.push({
+                    x: Math.random() * rect.width,
+                    y: Math.random() * rect.height,
+                    radius: Math.random() * 1.2,
+                    alpha: Math.random(),
+                    flickerSpeed: Math.random() * 0.015 + 0.005
                 });
             }
+        }
 
-            for(let i=0; i<fallingItems.length; i++) {
-                let s = fallingItems[i];
-                s.y += s.speed;
-                
-                ctx.fillStyle = s.color;
+        // 定义流星对象
+        class Meteor {
+            constructor(width, height) {
+                // 流星从右上角区域产生
+                this.x = Math.random() * width + width * 0.2; 
+                this.y = -20;
+                this.length = Math.random() * 60 + 40; // 尾巴长度
+                this.speed = Math.random() * 8 + 12;   // 滑落速度
+                this.angle = Math.PI / 4;              // 45度角滑落
+                this.opacity = 1;
+                this.thickness = Math.random() * 1.5 + 0.5;
+            }
+            update() {
+                this.x -= this.speed * Math.cos(this.angle);
+                this.y += this.speed * Math.sin(this.angle);
+                this.opacity -= 0.015; // 逐渐变暗消失
+            }
+            draw(ctx) {
+                ctx.save();
                 ctx.beginPath();
-                ctx.arc(s.x, s.y, s.size, 0, Math.PI*2);
-                ctx.fill();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x + this.length * Math.cos(this.angle), this.y - this.length * Math.sin(this.angle));
+                
+                // 渐变透明尾巴，增加高级感
+                let gradient = ctx.createLinearGradient(
+                    this.x, this.y, 
+                    this.x + this.length * Math.cos(this.angle), 
+                    this.y - this.length * Math.sin(this.angle)
+                );
+                gradient.addColorStop(0, `rgba(255, 255, 255, ${this.opacity})`);
+                gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
+                
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = this.thickness;
+                ctx.lineCap = "round";
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
 
-                // 碰撞检测
-                if(s.y + s.size >= basket.y && s.y <= basket.y + basket.h && s.x >= basket.x - 10 && s.x <= basket.x + basket.w + 10) {
-                    score++;
-                    document.getElementById('gameScore').innerText = `星光: ${score}`;
-                    showFloatingText(s.x, basket.y - 15);
-                    fallingItems.splice(i, 1);
-                    i--;
-                } else if (s.y > gameCanvas.height) {
-                    fallingItems.splice(i, 1);
-                    i--;
+        // 渲染星空动画帧
+        function animateSky() {
+            const rect = canvas.getBoundingClientRect();
+            
+            // 绘制深色夜空背景，带有轻微的拖影效果
+            ctx.fillStyle = 'rgba(26, 26, 36, 0.4)'; 
+            ctx.fillRect(0, 0, rect.width, rect.height);
+
+            // 绘制背景星星闪烁
+            backgroundStars.forEach(star => {
+                star.alpha += star.flickerSpeed;
+                if (star.alpha >= 1 || star.alpha <= 0.2) star.flickerSpeed *= -1;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+                ctx.fill();
+            });
+
+            // 绘制并更新流星
+            for (let i = meteors.length - 1; i >= 0; i--) {
+                meteors[i].update();
+                meteors[i].draw(ctx);
+                // 如果流星变透明或者飞出屏幕，就删掉它
+                if (meteors[i].opacity <= 0 || meteors[i].y > rect.height + 50) {
+                    meteors.splice(i, 1);
                 }
             }
-            
-            // +1 文字上浮
-            ctx.font = '300 12px Inter';
-            for(let i=0; i<floatTexts.length; i++) {
-                let ft = floatTexts[i];
-                ctx.fillStyle = `rgba(141, 153, 174, ${ft.alpha})`;
-                ctx.fillText("+1", ft.x - 6, ft.y);
-                ft.y -= 0.8; ft.alpha -= 0.03;
-                if(ft.alpha <= 0) { floatTexts.splice(i, 1); i--; }
-            }
 
-            reqId = requestAnimationFrame(gameLoop);
+            requestAnimationFrame(animateSky);
         }
 
-        function endGame() {
-            isPlaying = false;
-            clearInterval(gameTimer);
-            cancelAnimationFrame(reqId);
-            ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+        // 触发许愿流星雨
+        function triggerMeteorShower() {
+            if (isShowerActive) return; // 防止连续点击
+            isShowerActive = true;
             
-            ctx.fillStyle = '#4A4E69';
-            ctx.font = '600 18px Noto Serif SC';
-            ctx.textAlign = 'center';
-            ctx.fillText(`时间到 (Time's Up)`, gameCanvas.width/2, gameCanvas.height/2 - 10);
-            
-            ctx.font = '300 14px Inter';
-            ctx.fillStyle = '#8D99AE';
-            ctx.fillText(`共收集星光: ${score} 束`, gameCanvas.width/2, gameCanvas.height/2 + 20);
-            ctx.textAlign = 'left';
+            const btn = document.getElementById('meteorBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "愿望已发送至星空 ✨";
+            btn.style.opacity = 0.7;
+            btn.style.cursor = "default";
 
-            const btn = document.getElementById('startGameBtn');
-            btn.innerText = "再次放空 (Retry)";
-            btn.style.display = 'block';
+            let count = 0;
+            const rect = canvas.getBoundingClientRect();
+            
+            // 每隔一段时间划过一颗流星，制造随机感
+            const showerInterval = setInterval(() => {
+                meteors.push(new Meteor(rect.width, rect.height));
+                count++;
+                if (count > 6) { // 一次许愿划过 6-7 颗流星
+                    clearInterval(showerInterval);
+                    // 恢复按钮状态
+                    setTimeout(() => {
+                        isShowerActive = false;
+                        btn.innerText = originalText;
+                        btn.style.opacity = 1;
+                        btn.style.cursor = "pointer";
+                    }, 3000);
+                }
+            }, 350); 
         }
+
+        // 页面加载完成后初始化画布并启动背景星星动画
+        setTimeout(() => {
+            initMeteorCanvas();
+            animateSky();
+        }, 100);
+
+        // 监听屏幕旋转或缩放，重新调整画布大小
+        window.addEventListener('resize', initMeteorCanvas);
 
         // ================= 4. 治愈呼吸冥想 =================
         let medState = 0;
